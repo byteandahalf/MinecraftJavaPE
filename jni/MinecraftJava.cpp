@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <substrate.h>
 
+#include "javafeatures/hooks/MinecraftHook.h"
 #include "javafeatures/world/item/MinecraftJavaItem.h"
 #include "javafeatures/world/item/CarrotOnAStickItem.h"
 #include "javafeatures/world/level/block/MinecraftJavaBlock.h"
@@ -48,6 +49,8 @@ static void Minecraft$init(Minecraft* self, const std::string& s)
 static void initHooks(void* _minecraftpe)
 {
 	MSHookFunction((void*) &Minecraft::init, (void*) &Minecraft$init, (void**) &_Minecraft$init);
+
+	MinecraftHook::initHooks(_minecraftpe);
 }
 
 JNIEXPORT jint JNI_OnLoad(JavaVM* vm, void* reserved) {

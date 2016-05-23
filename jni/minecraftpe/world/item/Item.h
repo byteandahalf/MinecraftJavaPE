@@ -117,4 +117,7 @@ public:
 	static void addCreativeItem(Item*, short);
 	static void addCreativeItem(const ItemInstance&);
 	static void addCreativeItem(short, short);
+
+	static Item* mStick;
+	static Item* mSaddle;
 };
