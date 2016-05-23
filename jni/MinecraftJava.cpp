@@ -45,9 +45,97 @@ static void Minecraft$init(Minecraft* self, const std::string& s)
 	initCreativeItems();
 }
 
+/*
+*	DANGER ZONE:
+*	AWFUL CODE
+*	FOR VARIOUS TESTS
+*/
+
+static void (*__test)(void*, void*, const std::string&);
+static void _test(void* retval, void* self, const std::string& what)
+{
+	static bool lastPig = false;
+
+	if(lastPig)
+	{
+		lastPig = false;
+		return __test(retval, self, "geometry.cow");
+	}
+
+	if(what == "geometry.pig")
+	{
+		lastPig = true;
+	}
+
+	__test(retval, self, what);
+}
+
+enum TextureLocation
+{
+	TEXLOC_ZERO = 0
+};
+
+namespace mce
+{
+	struct RenderContext
+	{};
+
+	struct RenderContextImmediate
+	{
+		static RenderContext& get();
+	};
+
+	struct Texture
+	{
+		void bindTexture(mce::RenderContext&, unsigned int, unsigned int) const;
+	};
+
+	struct TexturePtr
+	{
+		char filler[12];
+		TexturePtr();
+		mce::Texture* operator->() const;
+	};
+
+	struct TextureGroup
+	{
+		mce::TexturePtr getTexture(const std::string&, TextureLocation);
+	};
+};
+
+static mce::TexturePtr saddle;
+
+struct PigRenderer
+{
+	char filler[148];
+	mce::TexturePtr texture;
+};
+
+static int _renderPigArmor(PigRenderer* self)
+{
+	saddle->bindTexture(mce::RenderContextImmediate::get(), 1, 2);
+	return 1;
+}
+
+static void* (*__ctor)(void*, mce::TextureGroup&, void*, void*, float);
+static void* _ctor(void* self, mce::TextureGroup& group, void* geo, void* geo2, float f)
+{
+	saddle = group.getTexture("mob/saddle.png", TEXLOC_ZERO);
+	return __ctor(self, group, geo, geo2, f);
+}
+
+
 /* Use a handle for hooking constructors/overloaded functions */
 static void initHooks(void* _minecraftpe)
 {
+	void* test = (void*) dlsym(_minecraftpe, "_ZN13GeometryGroup11getGeometryERKSs");
+	MSHookFunction(test, (void*) &_test, (void**) &__test);
+	void* ctor = (void*) dlsym(_minecraftpe, "_ZN11PigRendererC2ERN3mce12TextureGroupERK11GeometryPtrS5_f");
+	MSHookFunction(ctor, (void*) &_ctor, (void**) &__ctor);
+	uintptr_t** pigrender_vt = (uintptr_t**) dlsym(_minecraftpe, "_ZTV11PigRenderer");
+	pigrender_vt[7] = (uintptr_t*) &_renderPigArmor;
+
+
 	MSHookFunction((void*) &Minecraft::init, (void*) &Minecraft$init, (void**) &_Minecraft$init);
 
 	MinecraftHook::initHooks(_minecraftpe);
